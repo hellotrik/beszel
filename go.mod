@@ -7,8 +7,10 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/ebitengine/purego v0.10.0
 	github.com/fxamacker/cbor/v2 v2.9.0
+	github.com/getlantern/systray v1.2.2
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/google/uuid v1.6.0
+	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
 	github.com/lxzan/gws v1.9.1
 	github.com/nicholas-fedor/shoutrrr v0.14.3
 	github.com/pocketbase/dbx v1.12.0
@@ -20,6 +22,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.49.0
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
+	golang.org/x/net v0.52.0
 	golang.org/x/sys v0.42.0
 	gopkg.in/yaml.v3 v3.0.1
 	howett.net/plist v1.0.1
@@ -36,18 +39,27 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/ganigeorgiev/fexpr v0.5.0 // indirect
+	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
+	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7 // indirect
+	github.com/getlantern/golog v0.0.0-20190830074920-4ef2e798c2d7 // indirect
+	github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7 // indirect
+	github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55 // indirect
+	github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/go-sql-driver/mysql v1.9.1 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/lufia/plan9stats v0.0.0-20260324052639-156f7da3f749 // indirect
+	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
+	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -56,11 +68,11 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/image v0.38.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
+	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

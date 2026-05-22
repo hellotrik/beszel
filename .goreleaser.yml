@@ -34,9 +34,19 @@ builds:
 
   - id: beszel-agent
     binary: beszel-agent
-    main: internal/cmd/agent/agent.go
+    main: ./internal/cmd/agent
     env:
       - CGO_ENABLED=0
+    hooks:
+      pre:
+        - cmd: sh
+          args:
+            - -c
+            - 'test "{{ .Os }}" = "windows" && ARCH={{ .Arch }} sh ./scripts/sync-windows-agent-icon.sh || true'
+    overrides:
+      - goos: windows
+        ldflags:
+          - -s -w -H windowsgui
     goos:
       - linux
       - darwin
@@ -78,7 +88,7 @@ builds:
 
   - id: beszel-agent-linux-amd64-glibc
     binary: beszel-agent
-    main: internal/cmd/agent/agent.go
+    main: ./internal/cmd/agent
     env:
       - CGO_ENABLED=0
     flags:

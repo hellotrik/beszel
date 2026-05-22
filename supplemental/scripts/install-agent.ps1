@@ -359,6 +359,9 @@ function Install-NSSMService {
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install beszel-agent service"
     }
+
+    # Headless service mode (no tray in Session 0). Desktop tray: run beszel-agent.exe without -service.
+    & $nssmCommand set beszel-agent AppParameters "-service"
     
     Write-Host "Configuring service environment variables..."
     & $nssmCommand set beszel-agent AppEnvironmentExtra "+KEY=$Key"
@@ -374,6 +377,34 @@ function Install-NSSMService {
     $logFile = "$logDir\beszel-agent.log"
     & $nssmCommand set beszel-agent AppStdout $logFile
     & $nssmCommand set beszel-agent AppStderr $logFile
+
+    if ($Token -and $HubUrl -and $Key) {
+        Write-AgentConfigFile -HubUrl $HubUrl -Token $Token -Key $Key -Port $Port
+    }
+}
+
+# Writes %APPDATA%\beszel-agent\config.json for the tray UI (optional desktop use).
+function Write-AgentConfigFile {
+    param(
+        [string]$HubUrl,
+        [string]$Token,
+        [string]$Key,
+        [string]$Port = "45876"
+    )
+    $configDir = Join-Path $env:APPDATA "beszel-agent"
+    if (-not (Test-Path $configDir)) {
+        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+    }
+    $configPath = Join-Path $configDir "config.json"
+    $config = @{
+        hub_url = $HubUrl
+        token   = $Token
+        key     = $Key
+        port    = "$Port"
+    } | ConvertTo-Json
+    Set-Content -Path $configPath -Value $config -Encoding UTF8
+    Write-Host "Tray config written to $configPath"
+    Write-Host "For system tray: run beszel-agent.exe (double-click or Startup). Service uses -service mode."
 }
 
 # Function to configure firewall rules

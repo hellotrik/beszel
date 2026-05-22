@@ -85,9 +85,20 @@ fetch-smartctl-conditional:
 		go generate -run fetchsmartctl ./agent; \
 	fi
 
+# Windows tray agent uses GUI subsystem (no console window)
+AGENT_LDFLAGS := -w -s
+ifeq ($(OS),windows)
+AGENT_LDFLAGS := -H windowsgui -w -s
+endif
+
+# Sync icon.ico (repo root) for Windows tray + exe icon
+sync-agent-icon:
+	@sh ./scripts/sync-windows-agent-icon.sh
+
 # Update build-agent to include conditional .NET build
 build-agent: tidy build-dotnet-conditional fetch-smartctl-conditional
-	GOOS=$(OS) GOARCH=$(ARCH) go build $(AGENT_GO_TAGS) -o ./build/beszel-agent_$(OS)_$(ARCH)$(EXE_EXT) -ldflags "-w -s" ./internal/cmd/agent
+	@if [ "$(OS)" = "windows" ]; then sh ./scripts/sync-windows-agent-icon.sh ARCH=$(ARCH); fi
+	GOOS=$(OS) GOARCH=$(ARCH) go build $(AGENT_GO_TAGS) -o ./build/beszel-agent_$(OS)_$(ARCH)$(EXE_EXT) -ldflags "$(AGENT_LDFLAGS)" ./internal/cmd/agent
 
 build-hub: tidy $(if $(filter false,$(SKIP_WEB)),build-web-ui)
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o ./build/beszel_$(OS)_$(ARCH)$(EXE_EXT) -ldflags "-w -s" ./internal/cmd/hub

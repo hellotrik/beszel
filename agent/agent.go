@@ -5,6 +5,7 @@
 package agent
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 	"sync"
@@ -216,8 +217,7 @@ func (a *Agent) gatherStats(options common.DataRequestOptions) *system.CombinedD
 
 // Start initializes and starts the agent with optional WebSocket connection
 func (a *Agent) Start(serverOptions ServerOptions) error {
-	a.keys = serverOptions.Keys
-	return a.connectionManager.Start(serverOptions)
+	return a.Run(context.Background(), serverOptions)
 }
 
 func (a *Agent) getFingerprint() string {

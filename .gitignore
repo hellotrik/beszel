@@ -20,4 +20,5 @@ internal/site/src/locales/**/*.ts
 __debug_*
 agent/lhm/obj
 agent/lhm/bin
+internal/cmd/agent/rsrc_windows_*.syso
 dockerfile_agent_dev

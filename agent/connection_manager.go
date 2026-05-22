@@ -81,6 +81,13 @@ func (c *ConnectionManager) stopWsTicker() {
 // Start begins connection attempts and enters the main event loop.
 // It handles connection events, periodic health updates, and graceful shutdown.
 func (c *ConnectionManager) Start(serverOptions ServerOptions) error {
+	sigCtx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stopSignals()
+	return c.StartWithContext(sigCtx, serverOptions)
+}
+
+// StartWithContext is like Start but also stops when ctx is canceled.
+func (c *ConnectionManager) StartWithContext(ctx context.Context, serverOptions ServerOptions) error {
 	if c.eventChan != nil {
 		return errors.New("already started")
 	}
@@ -94,16 +101,25 @@ func (c *ConnectionManager) Start(serverOptions ServerOptions) error {
 	c.serverOptions = serverOptions
 	c.eventChan = make(chan ConnectionEvent, 1)
 
-	// signal handling for shutdown
 	sigCtx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stopSignals()
+	runCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() {
+		select {
+		case <-sigCtx.Done():
+			cancel()
+		case <-runCtx.Done():
+		}
+	}()
 
 	c.startWsTicker()
 	c.connect()
 
 	// update health status immediately and every 90 seconds
 	_ = health.Update()
-	healthTicker := time.Tick(90 * time.Second)
+	healthTicker := time.NewTicker(90 * time.Second)
+	defer healthTicker.Stop()
 
 	for {
 		select {
@@ -111,10 +127,11 @@ func (c *ConnectionManager) Start(serverOptions ServerOptions) error {
 			c.handleEvent(connectionEvent)
 		case <-c.wsTicker.C:
 			_ = c.startWebSocketConnection()
-		case <-healthTicker:
+		case <-healthTicker.C:
 			_ = health.Update()
-		case <-sigCtx.Done():
-			slog.Info("Shutting down", "cause", context.Cause(sigCtx))
+		case <-runCtx.Done():
+			slog.Info("Shutting down", "cause", context.Cause(runCtx))
+			c.eventChan = nil
 			return c.stop()
 		}
 	}
@@ -213,10 +230,13 @@ func (c *ConnectionManager) connect() {
 	// Try WebSocket first, if it fails, start SSH server
 	err := c.startWebSocketConnection()
 	if err != nil {
-		if shouldExitOnErr(err) {
+		if shouldExitOnErr(err) && !SupervisedMode {
 			time.Sleep(2 * time.Second) // prevent tight restart loop
 			_ = c.stop()
 			os.Exit(1)
+		}
+		if SupervisedMode && shouldExitOnErr(err) {
+			slog.Warn("DNS error in supervised mode, will retry", "err", err)
 		}
 		if c.State == Disconnected {
 			c.startSSHServer()
