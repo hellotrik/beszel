@@ -44,10 +44,13 @@ make build-agent OS=windows ARCH=amd64
 
 ## 托盘菜单
 
-- **Start / Stop** — 启动或停止与 Hub 的连接
-- **Settings…** — 图形设置窗（编辑上述字段）
-- **Reload configuration** — 重新加载 `config.json` 并重启 Agent
-- **Open logs folder** — `%ProgramData%\beszel-agent\logs`
+- **启动 / 停止** — 启动或停止与 Hub 的连接
+- **设置…** — 图形界面配置 Hub 地址、令牌、SSH 公钥等（首次运行会自动弹出）
+- **打开 config.json** — 用记事本编辑（与「设置…」写入同一文件）
+- **重新加载配置** — 重新读取 `config.json` 并重启 Agent
+- **打开日志目录** — `%ProgramData%\beszel-agent\logs`
+
+「设置…」在独立 UI 线程中打开原生对话框；若窗口未出现，请重新编译最新版 `beszel-agent.exe` 后再试。
 
 ## 命令行（与 Linux 相同）
 

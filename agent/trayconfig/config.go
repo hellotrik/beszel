@@ -77,17 +77,46 @@ func migrateFromEnv() Config {
 	return cfg
 }
 
-// Normalize trims fields and applies defaults (safe to call before save/validate).
+// Normalize trims fields, applies defaults, and normalizes common user input.
 func (c *Config) Normalize() {
-	c.HubURL = strings.TrimSpace(c.HubURL)
+	c.HubURL = normalizeHubURL(c.HubURL)
 	c.Token = strings.TrimSpace(c.Token)
-	c.Key = strings.TrimSpace(c.Key)
+	c.Key = normalizeSSHKey(c.Key)
 	c.Listen = strings.TrimSpace(c.Listen)
 	c.Port = strings.TrimSpace(c.Port)
 	c.LogLevel = strings.TrimSpace(c.LogLevel)
 	if c.Port == "" {
 		c.Port = DefaultPort
 	}
+}
+
+func normalizeHubURL(raw string) string {
+	u := strings.TrimSpace(raw)
+	if u == "" {
+		return u
+	}
+	if !strings.Contains(u, "://") {
+		u = "https://" + u
+	}
+	return strings.TrimRight(u, "/")
+}
+
+func normalizeSSHKey(raw string) string {
+	raw = strings.ReplaceAll(raw, "\r\n", "\n")
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return raw
+	}
+	lines := strings.Split(raw, "\n")
+	var kept []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		kept = append(kept, line)
+	}
+	return strings.Join(kept, "\n")
 }
 
 // Save writes config.json.
@@ -124,9 +153,15 @@ func (c Config) RuntimeConfig() agent.RuntimeConfig {
 	}
 }
 
-// Validate checks required fields without applying env.
+// Validate checks required fields, URL/token rules, and SSH public key format.
 func (c Config) Validate() error {
-	return c.ApplyToEnv()
+	if err := c.ApplyToEnv(); err != nil {
+		return err
+	}
+	if _, err := agent.ParseRuntimeKeys(c.RuntimeConfig()); err != nil {
+		return fmt.Errorf("SSH 公钥格式无效: %w", err)
+	}
+	return nil
 }
 
 // IsComplete returns true if required fields are non-empty.

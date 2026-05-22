@@ -8,33 +8,73 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-// showSettingsDialog opens a native form to edit tray agent settings. Returns saved config and whether user saved.
-func showSettingsDialog(initial trayconfig.Config) (trayconfig.Config, bool) {
+// showSettingsDialog opens a native form to edit tray agent settings on the walk UI thread.
+func showSettingsDialog(owner walk.Form, initial trayconfig.Config) (trayconfig.Config, bool) {
 	var dlg *walk.Dialog
 	var acceptPB, cancelPB *walk.PushButton
-	var hubEdit, tokenEdit, keyEdit, portEdit, listenEdit, logEdit *walk.LineEdit
+	var hubEdit, tokenEdit, portEdit, listenEdit, logEdit *walk.LineEdit
+	var keyEdit *walk.TextEdit
+	var committed trayconfig.Config
+	var didCommit bool
+
 	cfg := initial
 	cfg.Normalize()
 
+	readForm := func() trayconfig.Config {
+		out := trayconfig.Config{
+			HubURL:   hubEdit.Text(),
+			Token:    tokenEdit.Text(),
+			Key:      keyEdit.Text(),
+			Port:     portEdit.Text(),
+			Listen:   listenEdit.Text(),
+			LogLevel: logEdit.Text(),
+		}
+		out.Normalize()
+		return out
+	}
+
+	msgOwner := func() walk.Form {
+		if dlg != nil {
+			return dlg
+		}
+		return owner
+	}
+
+	commitAndAccept := func() {
+		out := readForm()
+		if err := out.Validate(); err != nil {
+			walk.MsgBox(msgOwner(), "配置无效", err.Error(), walk.MsgBoxIconWarning)
+			return
+		}
+		committed = out
+		didCommit = true
+		dlg.Accept()
+	}
+
 	cmd, err := Dialog{
 		AssignTo:      &dlg,
-		Title:         "Beszel Agent Settings",
-		MinSize:       Size{Width: 440, Height: 340},
+		Title:         "Beszel Agent 设置",
+		MinSize:       Size{Width: 480, Height: 420},
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
-		Layout:        VBox{Margins: Margins{Left: 10, Top: 10, Right: 10, Bottom: 10}},
+		Layout:        VBox{Margins: Margins{Left: 12, Top: 12, Right: 12, Bottom: 12}},
 		Children: []Widget{
-			Label{Text: "HUB_URL"},
+			Label{Text: "Hub 地址 (HUB_URL)"},
 			LineEdit{AssignTo: &hubEdit, Text: cfg.HubURL},
-			Label{Text: "TOKEN"},
-			LineEdit{AssignTo: &tokenEdit, Text: cfg.Token},
-			Label{Text: "KEY (SSH public key)"},
-			LineEdit{AssignTo: &keyEdit, Text: cfg.Key},
-			Label{Text: "PORT (SSH fallback, default 45876)"},
+			Label{Text: "令牌 (TOKEN)"},
+			LineEdit{AssignTo: &tokenEdit, Text: cfg.Token, PasswordMode: true},
+			Label{Text: "SSH 公钥 (KEY，单行粘贴即可)"},
+			TextEdit{
+				AssignTo: &keyEdit,
+				Text:     cfg.Key,
+				MinSize:  Size{Width: 440, Height: 72},
+				VScroll:  true,
+			},
+			Label{Text: "SSH 端口 (PORT，默认 45876)"},
 			LineEdit{AssignTo: &portEdit, Text: cfg.Port},
-			Label{Text: "LISTEN (optional, overrides PORT)"},
+			Label{Text: "监听地址 (LISTEN，可选，覆盖 PORT)"},
 			LineEdit{AssignTo: &listenEdit, Text: cfg.Listen},
-			Label{Text: "LOG_LEVEL (optional: debug, warn, error)"},
+			Label{Text: "日志级别 (LOG_LEVEL，可选: debug / warn / error)"},
 			LineEdit{AssignTo: &logEdit, Text: cfg.LogLevel},
 			Composite{
 				Layout: HBox{},
@@ -42,35 +82,35 @@ func showSettingsDialog(initial trayconfig.Config) (trayconfig.Config, bool) {
 					HSpacer{},
 					PushButton{
 						AssignTo:  &acceptPB,
-						Text:      "OK",
-						OnClicked: func() { dlg.Accept() },
+						Text:      "保存",
+						OnClicked: commitAndAccept,
 					},
 					PushButton{
 						AssignTo:  &cancelPB,
-						Text:      "Cancel",
+						Text:      "取消",
 						OnClicked: func() { dlg.Cancel() },
 					},
 				},
 			},
 		},
-	}.Run(nil)
+	}.Run(owner)
 
-	if err != nil || cmd != walk.DlgCmdOK || hubEdit == nil {
+	if err != nil || cmd != walk.DlgCmdOK {
 		return initial, false
 	}
 
-	out := trayconfig.Config{
-		HubURL:   hubEdit.Text(),
-		Token:    tokenEdit.Text(),
-		Key:      keyEdit.Text(),
-		Port:     portEdit.Text(),
-		Listen:   listenEdit.Text(),
-		LogLevel: logEdit.Text(),
+	// Enter 可能走系统默认 OK，未经过 OnClicked 时再读一次表单。
+	if !didCommit {
+		out := readForm()
+		if err := out.Validate(); err != nil {
+			walk.MsgBox(msgOwner(), "配置无效", err.Error(), walk.MsgBoxIconWarning)
+			return initial, false
+		}
+		committed = out
 	}
-	out.Normalize()
-	if err := out.Validate(); err != nil {
-		walk.MsgBox(nil, "Invalid settings", err.Error(), walk.MsgBoxIconWarning)
+
+	if hubEdit == nil || keyEdit == nil {
 		return initial, false
 	}
-	return out, true
+	return committed, true
 }

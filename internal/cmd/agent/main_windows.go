@@ -157,20 +157,22 @@ func onTrayReady() {
 	systray.SetTitle("Beszel Agent")
 	systray.SetTooltip("Beszel Agent " + getBeszelVersion())
 
-	mStatus := systray.AddMenuItem("Status: Starting…", "Connection status")
+	mStatus := systray.AddMenuItem("状态: 启动中…", "连接状态")
 	mStatus.Disable()
 	systray.AddSeparator()
-	mStart := systray.AddMenuItem("Start", "Start agent")
-	mStop := systray.AddMenuItem("Stop", "Stop agent")
-	mSettings := systray.AddMenuItem("Settings…", "Edit configuration")
-	mOpenCfg := systray.AddMenuItem("Open config.json", "Open in Notepad")
-	mReload := systray.AddMenuItem("Reload configuration", "Reload config and restart")
-	mOpenLogs := systray.AddMenuItem("Open logs folder", "Open log directory")
+	mStart := systray.AddMenuItem("启动", "启动 Agent")
+	mStop := systray.AddMenuItem("停止", "停止 Agent")
+	mSettings := systray.AddMenuItem("设置…", "图形界面配置参数")
+	mOpenCfg := systray.AddMenuItem("打开 config.json", "用记事本编辑")
+	mReload := systray.AddMenuItem("重新加载配置", "重新读取 config.json 并重启")
+	mOpenLogs := systray.AddMenuItem("打开日志目录", "打开日志文件夹")
 	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit", "Exit Beszel Agent")
+	mQuit := systray.AddMenuItem("退出", "退出 Beszel Agent")
 
 	go func() {
 		_, _ = winSupervisor.LoadConfig()
+		updateStatusMenu(mStatus)
+		promptFirstRunSettings()
 		updateStatusMenu(mStatus)
 		_ = winSupervisor.Start()
 		updateStatusMenu(mStatus)
@@ -189,10 +191,8 @@ func menuLoop(mStatus *systray.MenuItem, mStart, mStop, mSettings, mOpenCfg, mRe
 			winSupervisor.Stop()
 			updateStatusMenu(mStatus)
 		case <-mSettings.ClickedCh:
-			cfg, _ := trayconfig.Load()
-			if saved, ok := showSettingsDialog(cfg); ok {
-				_ = trayconfig.Save(saved)
-				_ = winSupervisor.Reload()
+			if saved, ok := openSettingsUI(); ok {
+				applyTrayConfig(saved)
 				updateStatusMenu(mStatus)
 			}
 		case <-mOpenCfg.ClickedCh:

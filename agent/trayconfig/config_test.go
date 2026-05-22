@@ -15,6 +15,18 @@ func TestConfigNormalize(t *testing.T) {
 	assert.Equal(t, DefaultPort, c.Port)
 }
 
+func TestNormalizeHubURLAddsScheme(t *testing.T) {
+	c := Config{HubURL: "wk.aspectj.top"}
+	c.Normalize()
+	assert.Equal(t, "https://wk.aspectj.top", c.HubURL)
+}
+
+func TestNormalizeSSHKeyStripsCRLF(t *testing.T) {
+	c := Config{Key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAB\r\n"}
+	c.Normalize()
+	assert.Equal(t, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAB", c.Key)
+}
+
 func TestSaveLoadRoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("DATA_DIR", dir)

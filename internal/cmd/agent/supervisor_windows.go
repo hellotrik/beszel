@@ -27,21 +27,21 @@ func (s *agentSupervisor) StatusLabel() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.errMsg != "" {
-		return "Status: Error — " + s.errMsg
+		return "状态: 错误 — " + s.errMsg
 	}
 	if !s.cfg.IsComplete() {
-		return "Status: Missing configuration"
+		return "状态: 未配置（请打开「设置…」）"
 	}
 	if s.agent == nil {
-		return "Status: Stopped"
+		return "状态: 已停止"
 	}
 	switch s.agent.ConnectionState() {
 	case agent.WebSocketConnected:
-		return "Status: Connected (WebSocket)"
+		return "状态: 已连接 (WebSocket)"
 	case agent.SSHConnected:
-		return "Status: Connected (SSH)"
+		return "状态: 已连接 (SSH)"
 	default:
-		return "Status: Disconnected"
+		return "状态: 未连接"
 	}
 }
 
@@ -82,7 +82,7 @@ func (s *agentSupervisor) Start() error {
 	if !cfg.IsComplete() {
 		s.mu.Lock()
 		s.cfg = cfg
-		s.errMsg = "HUB_URL, TOKEN, and KEY are required in config.json"
+		s.errMsg = "请在「设置…」中填写 Hub 地址、令牌和 SSH 公钥"
 		s.mu.Unlock()
 		return nil
 	}
